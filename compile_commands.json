@@ -1,0 +1,34 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I./src/include",
+      "-Werror",
+      "-Wall",
+      "-Wpedantic",
+      "-o",
+      "build/main",
+      "src/failure.cpp"
+    ],
+    "directory": "/home/kourtet/Programming/olcEngine3D",
+    "file": "/home/kourtet/Programming/olcEngine3D/src/failure.cpp",
+    "output": "/home/kourtet/Programming/olcEngine3D/build/main"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I./src/include",
+      "-Werror",
+      "-Wall",
+      "-Wpedantic",
+      "-o",
+      "build/main",
+      "src/main.cpp"
+    ],
+    "directory": "/home/kourtet/Programming/olcEngine3D",
+    "file": "/home/kourtet/Programming/olcEngine3D/src/main.cpp",
+    "output": "/home/kourtet/Programming/olcEngine3D/build/main"
+  }
+]
