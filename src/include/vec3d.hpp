@@ -16,6 +16,12 @@ public:
     this->z = z;
     this->w = 1.0f;
   }
+  vec3d(float x, float y, float z, float w) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->w = w;
+  }
 };
 
 inline void printVec3d(vec3d v) {

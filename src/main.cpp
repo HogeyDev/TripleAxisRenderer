@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <list>
 #include <sstream>
 #include <vector>
 
@@ -283,8 +284,265 @@ private:
     return Vector_Add(lineStart, lineToIntersect);
   }
 
+  int Triangle_ClipAgainstPlane(vec3d plane_p, vec3d plane_n, triangle &in_tri,
+                                triangle &out_tri1, triangle &out_tri2) {
+    plane_n = Vector_Normalise(plane_n);
+
+    auto dist = [&](vec3d &p) {
+      vec3d n = Vector_Normalise(p);
+      (void)n;
+      return (plane_n.x * p.x + plane_n.y * p.y + plane_n.z * p.z -
+              Vector_DotProduct(plane_n, plane_p));
+    };
+
+    vec3d *inside_points[3];
+    int nInsidePointCount = 0;
+    vec3d *outside_points[3];
+    int nOutsidePointCount = 0;
+
+    float d0 = dist(in_tri.p[0]);
+    float d1 = dist(in_tri.p[1]);
+    float d2 = dist(in_tri.p[2]);
+
+    if (d0 >= 0) {
+      inside_points[nInsidePointCount++] = &in_tri.p[0];
+    } else {
+      outside_points[nOutsidePointCount++] = &in_tri.p[0];
+    }
+    if (d1 >= 0) {
+      inside_points[nInsidePointCount++] = &in_tri.p[1];
+    } else {
+      outside_points[nOutsidePointCount++] = &in_tri.p[1];
+    }
+    if (d2 >= 0) {
+      inside_points[nInsidePointCount++] = &in_tri.p[2];
+    } else {
+      outside_points[nOutsidePointCount++] = &in_tri.p[2];
+    }
+
+    if (nInsidePointCount == 0) {
+      return 0;
+    }
+    if (nInsidePointCount == 3) {
+      out_tri1 = in_tri;
+      return 1;
+    }
+    if (nInsidePointCount == 1 && nOutsidePointCount == 2) {
+      out_tri1.illumination = in_tri.illumination;
+
+      out_tri1.p[0] = *inside_points[0];
+
+      out_tri1.p[1] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0],
+                                            *outside_points[0]);
+      out_tri1.p[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0],
+                                            *outside_points[1]);
+    }
+
+    return 1;
+    if (nInsidePointCount == 2 && nOutsidePointCount == 1) {
+      out_tri1.illumination = in_tri.illumination;
+      out_tri2.illumination = in_tri.illumination;
+
+      out_tri1.p[0] = *inside_points[0];
+      out_tri1.p[1] = *inside_points[1];
+      out_tri1.p[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[0],
+                                            *outside_points[0]);
+
+      out_tri2.p[0] = *inside_points[1];
+      out_tri2.p[1] = out_tri1.p[2];
+      out_tri2.p[2] = Vector_IntersectPlane(plane_p, plane_n, *inside_points[1],
+                                            *outside_points[0]);
+
+      return 2;
+    }
+  }
+
 public:
   bool OnUserCreate() {
+    meshCube.tris = {
+
+        // SOUTH
+        {
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+        },
+        {
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+        },
+
+        // EAST
+        {
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+        },
+        {
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+        },
+
+        // NORTH
+        {
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+        },
+        {
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+        },
+
+        // WEST
+        {
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+        },
+        {
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+        },
+
+        // TOP
+        {
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+        },
+        {
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+        },
+
+        // BOTTOM
+        {
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+        },
+        {
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            1.0f,
+        },
+
+    };
+
     if (!meshCube.LoadFromObjectFile("res/axis.obj")) {
       fail("Could not find file");
     }
@@ -325,7 +583,7 @@ public:
     matRotX = Matrix_MakeRotationX(fTheta);
 
     mat4x4 matTrans;
-    matTrans = Matrix_MakeTranslation(0.0f, 0.0f, 16.0f);
+    matTrans = Matrix_MakeTranslation(0.0f, 0.0f, 5.0f);
 
     mat4x4 matWorld;
     matWorld = Matrix_MakeIdentity();
@@ -336,7 +594,7 @@ public:
     vec3d vTarget = {0, 0, 1};
     mat4x4 matCameraRot = Matrix_MakeRotationY(fYaw);
     vLookDir = Matrix_MultiplyVector(matCameraRot, vTarget);
-
+    vTarget = Vector_Add(vCamera, vLookDir);
     mat4x4 matCamera = Matrix_PointAt(vCamera, vTarget, vUp);
 
     mat4x4 matView = Matrix_QuickInverse(matCamera);
@@ -372,27 +630,38 @@ public:
         triViewed.p[1] = Matrix_MultiplyVector(matView, triTransformed.p[1]);
         triViewed.p[2] = Matrix_MultiplyVector(matView, triTransformed.p[2]);
 
-        triProjected.p[0] = Matrix_MultiplyVector(matProj, triViewed.p[0]);
-        triProjected.p[1] = Matrix_MultiplyVector(matProj, triViewed.p[1]);
-        triProjected.p[2] = Matrix_MultiplyVector(matProj, triViewed.p[2]);
+        int nClippedTriangles = 0;
+        triangle clipped[2];
+        nClippedTriangles =
+            Triangle_ClipAgainstPlane({0.0f, 0.0f, 0.1f}, {0.0f, 0.0f, 1.0f},
+                                      triViewed, clipped[0], clipped[1]);
 
-        triProjected.p[0] = Vector_Div(triProjected.p[0], triProjected.p[0].w);
-        triProjected.p[1] = Vector_Div(triProjected.p[1], triProjected.p[1].w);
-        triProjected.p[2] = Vector_Div(triProjected.p[2], triProjected.p[2].w);
+        for (int n = 0; n < nClippedTriangles; n++) {
+          triProjected.p[0] = Matrix_MultiplyVector(matProj, triViewed.p[0]);
+          triProjected.p[1] = Matrix_MultiplyVector(matProj, triViewed.p[1]);
+          triProjected.p[2] = Matrix_MultiplyVector(matProj, triViewed.p[2]);
 
-        vec3d vOffsetView = {1, 1, 0};
-        triProjected.p[0] = Vector_Add(triProjected.p[0], vOffsetView);
-        triProjected.p[1] = Vector_Add(triProjected.p[1], vOffsetView);
-        triProjected.p[2] = Vector_Add(triProjected.p[2], vOffsetView);
-        triProjected.p[0].x *= 0.5f * (float)this->width;
-        triProjected.p[0].y *= 0.5f * (float)this->height;
-        triProjected.p[1].x *= 0.5f * (float)this->width;
-        triProjected.p[1].y *= 0.5f * (float)this->height;
-        triProjected.p[2].x *= 0.5f * (float)this->width;
-        triProjected.p[2].y *= 0.5f * (float)this->height;
+          triProjected.p[0] =
+              Vector_Div(triProjected.p[0], triProjected.p[0].w);
+          triProjected.p[1] =
+              Vector_Div(triProjected.p[1], triProjected.p[1].w);
+          triProjected.p[2] =
+              Vector_Div(triProjected.p[2], triProjected.p[2].w);
 
-        triProjected.illumination = dp;
-        vecTrianglesToRaster.push_back(triProjected);
+          vec3d vOffsetView = {1, 1, 0};
+          triProjected.p[0] = Vector_Add(triProjected.p[0], vOffsetView);
+          triProjected.p[1] = Vector_Add(triProjected.p[1], vOffsetView);
+          triProjected.p[2] = Vector_Add(triProjected.p[2], vOffsetView);
+          triProjected.p[0].x *= 0.5f * (float)this->width;
+          triProjected.p[0].y *= 0.5f * (float)this->height;
+          triProjected.p[1].x *= 0.5f * (float)this->width;
+          triProjected.p[1].y *= 0.5f * (float)this->height;
+          triProjected.p[2].x *= 0.5f * (float)this->width;
+          triProjected.p[2].y *= 0.5f * (float)this->height;
+
+          triProjected.illumination = dp;
+          vecTrianglesToRaster.push_back(triProjected);
+        }
       }
     }
 
@@ -403,13 +672,56 @@ public:
                 return z1 > z2;
               });
 
-    for (auto &triProjected : vecTrianglesToRaster) {
-      this->fillTriangle(
-          triProjected.p[0], triProjected.p[1], triProjected.p[2],
-          (static_cast<Uint32>(0xff * triProjected.illumination) << 24) |
-              (static_cast<Uint32>(0xff * triProjected.illumination) << 16) |
-              (static_cast<Uint32>(0xff * triProjected.illumination) << 8) |
-              0xff);
+    for (auto &triToRaster : vecTrianglesToRaster) {
+      triangle clipped[2];
+      std::list<triangle> listTriangles;
+      listTriangles.push_back(triToRaster);
+      int nNewTriangles = 1;
+
+      for (int p = 0; p < 4; p++) {
+        int nTrisToAdd = 0;
+        while (nNewTriangles > 0) {
+          triangle test = listTriangles.front();
+          listTriangles.pop_front();
+          nNewTriangles--;
+
+          switch (p) {
+          case 0:
+            nTrisToAdd = Triangle_ClipAgainstPlane({0.0f, 0.0f, 0.0f},
+                                                   {0.0f, 1.0f, 0.0f}, test,
+                                                   clipped[0], clipped[1]);
+            break;
+          case 1:
+            nTrisToAdd = Triangle_ClipAgainstPlane(
+                {0.0f, (float)this->height - 1, 0.0f}, {0.0f, -1.0f, 0.0f},
+                test, clipped[0], clipped[1]);
+            break;
+          case 2:
+            nTrisToAdd = Triangle_ClipAgainstPlane({0.0f, 0.0f, 0.0f},
+                                                   {1.0f, 0.0f, 0.0f}, test,
+                                                   clipped[0], clipped[1]);
+            break;
+          case 3:
+            nTrisToAdd = Triangle_ClipAgainstPlane(
+                {(float)this->width - 1, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, test,
+                clipped[0], clipped[1]);
+            break;
+          }
+
+          for (int w = 0; w < nTrisToAdd; w++) {
+            listTriangles.push_back(clipped[w]);
+          }
+        }
+        nNewTriangles = listTriangles.size();
+      }
+
+      for (auto &t : listTriangles) {
+        this->fillTriangle(
+            t.p[0], t.p[1], t.p[2],
+            (static_cast<Uint32>(0xff * t.illumination) << 24) |
+                (static_cast<Uint32>(0xff * t.illumination) << 16) |
+                (static_cast<Uint32>(0xff * t.illumination) << 8) | 0xff);
+      }
     }
 
     return true;
